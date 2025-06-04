@@ -1,61 +1,81 @@
-import React from 'react';
+import { useEffect, useState } from 'react';
 import { useSqlStore } from '../store/sqlStore';
-import { Table, TableEmpty } from './Table';
 
-const ResultsPanel: React.FC = () => {
-  const { queryResults, isLoading } = useSqlStore();
+export default function ResultsPanel() {
+  const { queryResults, error, isLoading } = useSqlStore();
+  const [lastRunTime, setLastRunTime] = useState<string | null>(null);
+
+  useEffect(() => {
+    console.log('ResultsPanel render, results:', queryResults, 'isLoading:', isLoading);
+    if (!isLoading && (queryResults || error)) {
+      setLastRunTime(new Date().toLocaleTimeString());
+    }
+  }, [isLoading, queryResults, error]);
 
   if (isLoading) {
     return (
-      <div className="card animate-pulse">
-        <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded mb-4 w-1/4"></div>
-        <div className="space-y-3">
-          <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded"></div>
-          <div className="grid grid-cols-4 gap-4">
-            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded col-span-1"></div>
-            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded col-span-1"></div>
-            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded col-span-1"></div>
-            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded col-span-1"></div>
-          </div>
+      <div className="results-panel p-4 border rounded bg-white dark:bg-gray-800">
+        <div className="flex items-center">
+          <svg className="animate-spin h-5 w-5 mr-2 text-blue-500" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+          </svg>
+          <span>Loading...</span>
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="results-panel p-4 border rounded bg-white dark:bg-gray-800 text-red-600 dark:text-red-400">
+        Error: {error}
       </div>
     );
   }
 
   if (!queryResults || queryResults.length === 0) {
     return (
-      <div className="card">
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Query Results</h2>
-        <TableEmpty message="No results to display. Run a query to see results." />
+      <div className="results-panel p-4 border rounded bg-white dark:bg-gray-800">
+        No results to display.
       </div>
     );
   }
 
   return (
-    <div className="card">
-      <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
-        Query Results
-        {queryResults.length > 0 && queryResults[0].values.length > 0 && (
-          <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
-            ({queryResults[0].values.length} rows)
-          </span>
-        )}
-      </h2>
-      
-      <div className="overflow-x-auto">
+    <div className="mt-6">
+        <div className="results-panel p-4 border rounded bg-white dark:bg-gray-800">
+        <div className="mb-2 text-sm text-gray-600 dark:text-gray-400">
+          Last run: {lastRunTime || 'Never'}
+        </div>
         {queryResults.map((result, index) => (
-          <div key={index} className="mb-4 last:mb-0">
-            {queryResults.length > 1 && (
-              <h3 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Result Set {index + 1}
-              </h3>
-            )}
-            <Table columns={result.columns} data={result.values} />
+          <div key={index} className="mb-4">
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100">Result {index + 1}</h3>
+            <table className="w-full border border-gray-300 dark:border-gray-600">
+              <thead>
+                <tr className="bg-gray-100 dark:bg-gray-700">
+                  {result.columns.map((column) => (
+                    <th key={column} className="border border-gray-300 dark:border-gray-600 p-2 text-left text-gray-900 dark:text-gray-100">
+                      {column}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {result.values.map((row, rowIndex) => (
+                  <tr key={rowIndex} className="even:bg-gray-50 dark:even:bg-gray-900">
+                    {row.map((value, colIndex) => (
+                      <td key={colIndex} className="border border-gray-300 dark:border-gray-600 p-2 text-gray-900 dark:text-gray-100">
+                        {value}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ))}
-      </div>
+     </div>
     </div>
   );
-};
-
-export default ResultsPanel;
+}

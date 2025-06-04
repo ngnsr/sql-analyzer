@@ -45,22 +45,19 @@ ORDER BY total_spent DESC;`,
 
   executeQuery: async () => {
     const { db, currentQuery } = get();
-
+    console.log("Executing query:", currentQuery, "DB initialized:", !!db);
     if (!db) {
       set({ error: "Database not initialized" });
       return;
     }
-
     if (!currentQuery.trim()) {
       set({ error: "Please enter a SQL query" });
       return;
     }
-
     set({ isLoading: true, error: null });
-
     try {
       const parsedQuery = parseQuery(currentQuery);
-      const results = db.exec(currentQuery); // sql.js exec is synchronous
+      const results = db.exec(currentQuery);
       set({
         queryResults: results,
         parsedQuery,
